@@ -122,7 +122,7 @@ cimi --mcp-config-file /path/to/mcp.json
 To develop Cimi, run:
 
 ```sh
-git clone https://github.com/yourusername/cimi.git
+git clone https://github.com/abhishekbhakat/cimi.git
 cd cimi
 
 make prepare  # prepare the development environment

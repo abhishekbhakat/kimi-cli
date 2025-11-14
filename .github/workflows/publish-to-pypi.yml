@@ -1,0 +1,47 @@
+name: Publish to PyPI
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  publish:
+    name: Build and publish to PyPI
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write  # Required for trusted publishing to PyPI
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        version: "latest"
+        enable-cache: true
+        cache-dependency-glob: "uv.lock"
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.13"
+    
+    - name: Install dependencies
+      run: |
+        uv sync
+    
+    - name: Build package
+      run: |
+        uv build
+    
+    - name: Check version matches
+      run: |
+        echo "Built version: $(ls dist/*.tar.gz | sed 's/.*-\(.*\)\.tar\.gz/\1/')"
+        echo "Release tag: ${{ github.ref_name }}"
+    
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        verbose: true
