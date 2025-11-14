@@ -232,15 +232,11 @@ class ShellApp:
         toast("checking for updates...", topic="update", duration=2.0)
         result = await do_update(print=False, check_only=True)
         if result == UpdateResult.UPDATE_AVAILABLE:
-            while True:
-                toast(
-                    "new version found, run `uv tool upgrade kimi-cli` to upgrade",
-                    topic="update",
-                    duration=30.0,
-                )
-                await asyncio.sleep(60.0)
-        elif result == UpdateResult.UPDATED:
-            toast("auto updated, restart to use the new version", topic="update", duration=5.0)
+            toast(
+                "new version found, run `uv tool upgrade cimi` to upgrade",
+                topic="update",
+                duration=30.0,
+            )
 
     def _start_background_task(self, coro: Coroutine[Any, Any, Any]) -> asyncio.Task[Any]:
         task = asyncio.create_task(coro)
@@ -305,7 +301,7 @@ def _print_welcome_info(name: str, info_items: list[WelcomeInfoItem]) -> None:
             rows.append(
                 Text.from_markup(
                     f"\n[yellow]New version available: {latest_version}. "
-                    "Please run `uv tool upgrade kimi-cli` to upgrade.[/yellow]"
+                    "Please run `uv tool upgrade cimi` to upgrade.[/yellow]"
                 )
             )
 

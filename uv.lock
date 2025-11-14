@@ -309,7 +309,7 @@ wheels = [
 
 [[package]]
 name = "cimi"
-version = "0.54.1"
+version = "0.54.2"
 source = { editable = "." }
 dependencies = [
     { name = "agent-client-protocol" },
