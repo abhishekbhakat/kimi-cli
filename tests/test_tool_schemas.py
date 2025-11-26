@@ -4,15 +4,15 @@ from __future__ import annotations
 
 from inline_snapshot import snapshot
 
-from kimi_cli.tools.bash import Bash
+from kimi_cli.tools.multiagent.create import CreateSubagent
+from kimi_cli.tools.shell import Shell
 from kimi_cli.tools.dmail import SendDMail
 from kimi_cli.tools.file.glob import Glob
-from kimi_cli.tools.file.grep import Grep
-from kimi_cli.tools.file.patch import PatchFile
+from kimi_cli.tools.file.grep_local import Grep
 from kimi_cli.tools.file.read import ReadFile
 from kimi_cli.tools.file.replace import StrReplaceFile
 from kimi_cli.tools.file.write import WriteFile
-from kimi_cli.tools.task import Task
+from kimi_cli.tools.multiagent.task import Task
 from kimi_cli.tools.think import Think
 from kimi_cli.tools.todo import SetTodoList
 from kimi_cli.tools.web.fetch import FetchURL
@@ -38,6 +38,26 @@ def test_task_params_schema(task_tool: Task):
                 },
             },
             "required": ["description", "subagent_name", "prompt"],
+            "type": "object",
+        }
+    )
+
+
+def test_create_subagent_params_schema(create_subagent_tool: CreateSubagent):
+    """Test the schema of CreateSubagent tool parameters."""
+    assert create_subagent_tool.base.parameters == snapshot(
+        {
+            "properties": {
+                "name": {
+                    "description": "Unique name for this agent configuration (e.g., 'summarizer', 'code_reviewer'). This name will be used to reference the agent in the Task tool.",
+                    "type": "string",
+                },
+                "system_prompt": {
+                    "description": "System prompt defining the agent's role, capabilities, and boundaries.",
+                    "type": "string",
+                },
+            },
+            "required": ["name", "system_prompt"],
             "type": "object",
         }
     )
@@ -109,9 +129,9 @@ def test_set_todo_list_params_schema(set_todo_list_tool: SetTodoList):
     )
 
 
-def test_bash_params_schema(bash_tool: Bash):
-    """Test the schema of Bash tool parameters."""
-    assert bash_tool.base.parameters == snapshot(
+def test_shell_params_schema(shell_tool: Shell):
+    """Test the schema of Shell tool parameters."""
+    assert shell_tool.base.parameters == snapshot(
         {
             "properties": {
                 "command": {
@@ -340,26 +360,6 @@ def test_str_replace_file_params_schema(str_replace_file_tool: StrReplaceFile):
                 },
             },
             "required": ["path", "edit"],
-            "type": "object",
-        }
-    )
-
-
-def test_patch_file_params_schema(patch_file_tool: PatchFile):
-    """Test the schema of PatchFile tool parameters."""
-    assert patch_file_tool.base.parameters == snapshot(
-        {
-            "properties": {
-                "path": {
-                    "description": "The absolute path to the file to apply the patch to.",
-                    "type": "string",
-                },
-                "diff": {
-                    "description": "The diff content in unified format to apply.",
-                    "type": "string",
-                },
-            },
-            "required": ["path", "diff"],
             "type": "object",
         }
     )

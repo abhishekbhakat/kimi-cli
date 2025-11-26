@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import contextlib
-import os
 import warnings
-from collections.abc import Generator
+from collections.abc import AsyncGenerator
 from pathlib import Path
 from typing import Any
 
 from pydantic import SecretStr
 
+import kaos
+from kaos.path import KaosPath
 from kimi_cli.agentspec import DEFAULT_AGENT_FILE
 from kimi_cli.cli import InputFormat, OutputFormat
 from kimi_cli.config import LLMModel, LLMProvider, load_config
@@ -16,10 +17,9 @@ from kimi_cli.llm import augment_provider_with_env_vars, create_llm
 from kimi_cli.session import Session
 from kimi_cli.share import get_share_dir
 from kimi_cli.soul import LLMNotSet, LLMNotSupported
-from kimi_cli.soul.agent import load_agent
+from kimi_cli.soul.agent import Runtime, load_agent
 from kimi_cli.soul.context import Context
 from kimi_cli.soul.kimisoul import KimiSoul
-from kimi_cli.soul.runtime import Runtime
 from kimi_cli.utils.logging import StreamToLogger, logger
 from kimi_cli.utils.path import shorten_home
 
@@ -101,14 +101,10 @@ class KimiCLI:
             agent_file = DEFAULT_AGENT_FILE
         agent = await load_agent(agent_file, runtime, mcp_configs=mcp_configs or [])
 
-        context = Context(session.history_file)
+        context = Context(session.context_file)
         await context.restore()
 
-        soul = KimiSoul(
-            agent,
-            runtime,
-            context=context,
-        )
+        soul = KimiSoul(agent, context=context)
         try:
             soul.set_thinking(thinking)
         except (LLMNotSet, LLMNotSupported) as e:
@@ -135,17 +131,17 @@ class KimiCLI:
         """Get the Session instance."""
         return self._runtime.session
 
-    @contextlib.contextmanager
-    def _app_env(self) -> Generator[None]:
-        original_cwd = Path.cwd()
-        os.chdir(self._runtime.session.work_dir)
+    @contextlib.asynccontextmanager
+    async def _app_env(self) -> AsyncGenerator[None]:
+        original_cwd = KaosPath.cwd()
+        await kaos.chdir(self._runtime.session.work_dir)
         try:
             # to ignore possible warnings from dateparser
             warnings.filterwarnings("ignore", category=DeprecationWarning)
             with contextlib.redirect_stderr(StreamToLogger()):
                 yield
         finally:
-            os.chdir(original_cwd)
+            await kaos.chdir(original_cwd)
 
     async def run_shell_mode(self, command: str | None = None) -> bool:
         from kimi_cli.ui.shell import ShellApp, WelcomeInfoItem
@@ -196,7 +192,7 @@ class KimiCLI:
                     level=WelcomeInfoItem.Level.INFO,
                 )
             )
-        with self._app_env():
+        async with self._app_env():
             app = ShellApp(self._soul, welcome_info=welcome_info)
             return await app.run(command)
 
@@ -208,25 +204,25 @@ class KimiCLI:
     ) -> bool:
         from kimi_cli.ui.print import PrintApp
 
-        with self._app_env():
+        async with self._app_env():
             app = PrintApp(
                 self._soul,
                 input_format,
                 output_format,
-                self._runtime.session.history_file,
+                self._runtime.session.context_file,
             )
             return await app.run(command)
 
     async def run_acp_server(self) -> bool:
         from kimi_cli.ui.acp import ACPServer
 
-        with self._app_env():
+        async with self._app_env():
             app = ACPServer(self._soul)
             return await app.run()
 
     async def run_wire_server(self) -> bool:
         from kimi_cli.ui.wire import WireServer
 
-        with self._app_env():
+        async with self._app_env():
             server = WireServer(self._soul)
             return await server.run()
